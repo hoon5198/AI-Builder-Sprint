@@ -16,7 +16,25 @@
             --accent: #8B7355;
             --line: #E8E2DA;
             --serif: 'Gowun Batang', serif;
+            --envflap: #F6F2EC;
+            --envbody: #ffffff;
+            --ph: #C7C0B7;
+            --mark: #F0E7DA;
+            --hover: #F2EDE6;
             --sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg: #1C1A18;
+            --text: #E8E1D6;
+            --sub: #948B80;
+            --accent: #C4A67D;
+            --line: #332F2B;
+            --envflap: #262320;
+            --envbody: #211F1C;
+            --ph: #5C564F;
+            --mark: #3A342C;
+            --hover: #252220;
         }
 
         * {
@@ -48,6 +66,7 @@
             max-width: 380px;
             height: 760px;
             background: var(--bg);
+            color: var(--text);
             border-radius: 34px;
             overflow: hidden;
             position: relative;
@@ -58,6 +77,7 @@
             position: absolute;
             inset: 0;
             background: var(--bg);
+            color: var(--text);
             display: none;
             flex-direction: column;
             padding: 52px 26px 26px;
@@ -94,6 +114,7 @@
         .date {
             font-size: 15px;
             font-weight: 500;
+            color: var(--text);
         }
 
         .icons {
@@ -123,6 +144,7 @@
 
         .lockname {
             font-family: var(--serif);
+            color: var(--text);
             font-size: 32px;
             letter-spacing: .20em;
             margin-bottom: 10px;
@@ -160,6 +182,22 @@
             margin-top: 18px;
         }
 
+        .themetoggle {
+            position: absolute;
+            bottom: 34px;
+            font-size: 12px;
+            color: var(--sub);
+            cursor: pointer;
+            padding: 8px 18px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+        }
+
+        .themetoggle:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
         /* 홈 */
         .writer {
             flex: 1;
@@ -175,7 +213,7 @@
         }
 
         .writer::placeholder {
-            color: #C7C0B7;
+            color: var(--ph);
         }
 
         .homefoot {
@@ -210,6 +248,7 @@
         /* 캘린더 */
         .caltitle {
             font-family: var(--serif);
+            color: var(--text);
             font-size: 19px;
             margin-bottom: 4px;
         }
@@ -246,7 +285,7 @@
         }
 
         .day:hover {
-            background: #F2EDE6;
+            background: var(--hover);
         }
 
         .day.blank {
@@ -287,11 +326,11 @@
             width: 190px;
             height: 126px;
             border: 1px solid var(--line);
-            background: #fff;
             border-radius: 4px;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            background: var(--envbody);
             transition: transform .2s;
         }
 
@@ -307,7 +346,7 @@
             height: 70px;
             border-bottom: 1px solid var(--line);
             clip-path: polygon(0 0, 100% 0, 50% 100%);
-            background: #F6F2EC;
+            background: var(--envflap);
         }
 
         .env .seal {
@@ -338,6 +377,11 @@
         .letterwrap {
             flex: 1;
             overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .letterwrap::-webkit-scrollbar {
+            display: none;
         }
 
         .lettermonth {
@@ -353,6 +397,7 @@
             font-size: 15.5px;
             line-height: 2.05;
             margin: 0 0 22px;
+            color: var(--text);
         }
 
         .lk {
@@ -393,6 +438,7 @@
 
         .dtitle {
             font-family: var(--serif);
+            color: var(--text);
             font-size: 18px;
             margin-bottom: 20px;
         }
@@ -401,10 +447,11 @@
             font-family: var(--serif);
             font-size: 16px;
             line-height: 2.0;
+            color: var(--text);
         }
 
         .mark {
-            background: #F0E7DA;
+            background: var(--mark);
             padding: 1px 2px;
         }
 
@@ -434,7 +481,7 @@
 
     <div class="brandbar">초하루 · 프로토타입</div>
 
-    <div class="phone">
+    <div class="phone" data-theme="light">
 
         <!-- 0 잠금 -->
         <div class="screen on" id="lock">
@@ -450,6 +497,7 @@
                 </svg>
             </div>
             <div class="locktip">지문으로 열기</div>
+            <div class="themetoggle" onclick="toggleTheme()">밤에 읽기</div>
         </div>
 
         <!-- 1 홈 -->
@@ -549,6 +597,12 @@
             '26': ['7월 26일 일요일', '시장에서 <em>복숭아 사 왔다.</em> 한 박스에 만 이천 원. 두 개는 그 자리에서 먹음.']
         };
 
+        function toggleTheme() {
+            const r = document.querySelector('.phone');
+            const dark = r.getAttribute('data-theme') === 'dark';
+            r.setAttribute('data-theme', dark ? 'light' : 'dark');
+            document.querySelector('.themetoggle').textContent = dark ? '밤에 읽기' : '낮에 읽기';
+        }
         function go(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
             document.getElementById(id).classList.add('on');
