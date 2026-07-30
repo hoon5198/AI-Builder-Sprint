@@ -12,3 +12,9 @@ export type LetterSegment =
 export interface LetterParagraph {
   segments: LetterSegment[];
 }
+
+export interface ReceivedLetter {
+  yearMonth: string; // 'YYYY-MM'
+  monthLabel: string; // '2026년 7월'
+  preview: string; // 편지 첫 문장
+}
