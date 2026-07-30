@@ -107,3 +107,33 @@ interface ExtractedSignal {
 - docs 폴더엔 plan.md / progress.md / prototype.html / 초하루_역할분담.md 이렇게 4개뿐이고, 역할분담 문서는
   하나뿐이라 버전 통일 문제 자체가 없었음
 - 앞으로 문서 관련 메모 남길 땐 "어느 파일의 어느 버전"인지 파일명을 정확히 적을 것 (헷갈림 방지)
+
+## 2026-07-30 (추가) — 브랜치 정리 완료, main이 기준점으로 확정
+
+### 있었던 일
+- hoooon과 hyelim이 애초에 커밋 역사가 서로 다른 브랜치였음(각자 로컬에서 git init한 결과로 추정)
+- 이 때문에 GitHub PR 화면이 정상 작동 안 해서, 로컬에서 강제 병합(`--allow-unrelated-histories`) 진행
+- `sync-hyelim`이라는 임시 브랜치를 만들어 main 기준으로 hyelim을 합치고 → PR → main에 merge 완료
+- 이후 hoooon 브랜치도 main과 다시 합쳐서(충돌 5개 파일 발생, 전부 main 내용으로 채택) 최신화 완료
+- **결론: 지금부터 main이 진짜 최신 기준점.** 각자 브랜치에서 작업 시작 전엔 반드시
+  `git fetch origin` → `git merge origin/main`으로 최신화할 것
+
+### CLAUDE.md 추가된 내용
+- "저장소 규칙" 섹션 추가됨: PR/이슈/커밋은 원본 레포(ApptiveDev/AI-Builder-Sprint)가 아닌
+  포크한 팀 레포에만 할 것 (대회 측 공지 반영)
+
+### 사람 3 (지문) 진행 상황
+- `src/pipeline/types.ts` 작성 완료 — `ExtractedSignal` 타입 정의됨
+```ts
+  interface ExtractedSignal {
+    category: 'repeated' | 'faded' | 'unspoken_effort';
+    quote: string;   // 원문 그대로, 한 글자도 수정 없음
+    date: string;    // YYYY-MM-DD
+  }
+```
+- 다음: `assemble.ts`(조립), `verify.ts`(검증) 작업 예정
+
+### 사람 2 (yebbinie)에게
+- 작업 시작 전에 본인 브랜치에서 `git fetch origin` + `git merge origin/main` 먼저 해서 최신 상태로 맞춰줘
+- `getEntriesForMonth`는 비동기(`Promise<DiaryEntry[]>`)인 거 위쪽에 이미 적혀있으니 참고
+- 사람2 → 사람3으로 넘길 `ExtractedSignal` 타입은 위에서 확정됨 (`src/pipeline/types.ts`), 이 타입 그대로 맞춰서 `extract.ts` 결과를 만들어주면 됨
