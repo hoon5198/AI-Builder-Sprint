@@ -40,7 +40,8 @@
 사람 1이 만들 함수:
 ```ts
 // src/storage.ts
-function getEntriesForMonth(yearMonth: string): DiaryEntry[]
+function getEntriesForMonth(yearMonth: string): Promise<DiaryEntry[]>
+// AsyncStorage 기반이라 비동기. 쓸 때 반드시 await 붙일 것
 ```
 
 사람 2 → 사람 3으로 넘기는 데이터 형태:
@@ -98,3 +99,11 @@ interface ExtractedSignal {
 - 편지함은 현재 7월 1건만 있어서 리스트가 사실상 의미 없음. 편지 파이프라인(사람2·3)이 월별로 편지를 만들어내기 시작하면 `receivedLetters`를 실제 데이터로 교체해야 함
 
 <!-- 다음 작업자는 여기 아래에 이어서 기록하세요 -->
+
+## 2026-07-30 (추가) — 문서 버전 혼선 확인 및 정리
+
+- 어제 progress.md에 "hoooon 쪽 docs는 오래된 버전(4인 역할분담, 연말편지 항목 빠짐)"이라는 메모가 있었으나,
+  확인 결과 그런 별도 버전은 실제로 존재하지 않았음 (plan.md에 "연말편지" 검색해도 안 나오고, 팀원도 확인해줌)
+- docs 폴더엔 plan.md / progress.md / prototype.html / 초하루_역할분담.md 이렇게 4개뿐이고, 역할분담 문서는
+  하나뿐이라 버전 통일 문제 자체가 없었음
+- 앞으로 문서 관련 메모 남길 땐 "어느 파일의 어느 버전"인지 파일명을 정확히 적을 것 (헷갈림 방지)
