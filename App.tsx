@@ -14,6 +14,14 @@ import DiaryDetailScreen from './src/screens/DiaryDetailScreen';
 import DiaryWriteScreen from './src/screens/DiaryWriteScreen';
 import LetterboxScreen from './src/screens/LetterboxScreen';
 import { entries } from './src/data/mockData';
+import { formatDateLabel } from './src/dateUtils';
+
+function todayDateString(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox';
 
@@ -25,7 +33,8 @@ function AppInner() {
   const [diaryFromLetter, setDiaryFromLetter] = useState(false);
   const [writeDate, setWriteDate] = useState<string | null>(null);
 
-  const todayLabel = '7월 28일 화요일'; // TODO: 실제 날짜 로직 붙일 때 교체
+  const todayDate = todayDateString();
+  const todayLabel = formatDateLabel(todayDate);
 
   function handleUnlock() {
     // 데모 모드일 때는 "이번 달 1일 첫 실행"으로 강제 취급해 편지로 바로 진입한다.
@@ -66,6 +75,7 @@ function AppInner() {
       )}
       {screen === 'home' && (
         <HomeScreen
+          date={todayDate}
           dateLabel={todayLabel}
           onOpenCalendar={() => setScreen('cal')}
           onOpenLetterbox={() => setScreen('letterbox')}

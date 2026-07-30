@@ -188,3 +188,30 @@ interface ExtractedSignal {
 - 사람2의 `extract.ts` 완성되면, `realSignals.ts`의 수동 데이터를 `extract.ts` 결과로 교체
 - 시간 남으면 OCR(Upstage Document Parse) 연동 — 우선순위 낮음, 8/2 밤까지도 안 되면 포기 가능
 - 실데이터가 5개뿐이라 '반복된 감정'/'사라진 걱정' 카테고리는 아직 의미 있게 테스트 못 함. 팀원 실데이터(§14, 아직 아무도 수집 안 함) 더 모이면 재테스트 필요
+
+## 2026-07-31 — 사람1: 저장소(storage.ts) CRUD 정리, 홈 화면 저장 버튼 연결
+
+### AsyncStorage
+- `@react-native-async-storage/async-storage@2.2.0` 이미 설치돼 있었음(`npx expo install --check` 통과, SDK 54와 호환). 새로 설치한 것 없음
+
+### `src/storage.ts` 함수 이름 변경 + 신규 추가
+- 기존 `getEntry(date)` / `saveEntry(entry: DiaryEntry)` → `getDiaryEntry(date)` / `saveDiaryEntry(date, content)`로 이름 변경
+  - `saveDiaryEntry`는 `(date, content)` 두 인자만 받고, `dateLabel`은 내부에서 `formatDateLabel(date)`로 자동 생성함. 기존 `highlight` 필드가 있던 항목은 덮어쓰지 않고 그대로 유지(스프레드 후 `body`만 교체)
+  - **호출부가 있으면 이 이름으로 맞춰서 고쳐야 함** — 오늘 `src/screens/DiaryWriteScreen.tsx`의 호출부도 같이 바꿔놨음
+- `deleteDiaryEntry(date)` 신규 추가 (지금까지 없었음)
+- `getEntriesForMonth(yearMonth)`는 손대지 않음 — 이미 사람2와 공유된 시그니처(`Promise<DiaryEntry[]>`)라 그대로 둠
+- AsyncStorage 키 구조는 그대로: 단일 키 `chohyaru:diaryEntries`에 `{ [date]: DiaryEntry }` 통짜 오브젝트. 날짜별 개별 키로 바꾸지 않음 (한 달 최대 31건 수준이라 안 바꿔도 됨, `getEntriesForMonth` 구현이 이 구조 전제)
+
+### 홈 화면(오늘 일기) 저장 기능 실제 연결
+- `App.tsx`: 하드코딩돼 있던 `todayLabel = '7월 28일 화요일'` TODO를 실제 `new Date()` 기반 `YYYY-MM-DD` + `formatDateLabel`로 교체. `HomeScreen`에 `date` prop으로 오늘 날짜 문자열을 넘겨줌
+- `src/screens/HomeScreen.tsx`:
+  - 진입 시 `getDiaryEntry(오늘 날짜)`로 기존에 쓴 게 있으면 불러와서 이어쓰기 (plan.md §7 [1] "오늘 이미 쓴 게 있으면 이어쓰기" — 지금까지 빈 입력창만 있던 부분이라 이번에 같이 채움)
+  - 저장 버튼 `onPress` → `saveDiaryEntry(date, text)` 연결 (기존엔 버튼에 `onPress` 자체가 없었음)
+  - 저장 성공 시 버튼 옆에 `--sub` 색 텍스트로 "저장됨"이 1.5초간 떴다 사라짐. 토스트/스낵바 같은 팝업은 디자인 스킬 기준(카드·그림자 없음, 앱이 말을 많이 안 걺)에 안 맞아서 인라인 텍스트로 처리함. 화면 이동은 안 함 — 홈 자체가 "오늘 일기" 화면이라 이동할 곳이 없음
+
+### 확인한 것 / 못 한 것
+- `npx tsc --noEmit`: 이번에 건드린 파일(`App.tsx`, `HomeScreen.tsx`, `DiaryWriteScreen.tsx`, `storage.ts`) 관련 에러 없음. (참고: `frontend/` 폴더에 별개의 미사용 스캐폴드 관련 에러가 이미 있었는데, 이번 작업과 무관 — 안 건드림)
+- **실기기(Expo Go) 확인은 못 함.** 폰을 직접 조작할 수 있는 도구가 없어서, 이번 세션에서 `npx expo start`로 Metro 서버(`http://localhost:8081`)만 띄워놓고 팀원에게 실기기 확인을 요청함. 확인해야 할 것: ① 오늘 일기 입력 후 저장 → "저장됨" 텍스트가 잠깐 뜨는지 ② 앱을 껐다 켜거나 캘린더 갔다 왔을 때 저장한 내용이 남아있는지(이어쓰기) ③ 캘린더에서 "안 쓴 날" 탭 → 일기 쓰기 화면 저장도 계속 정상 동작하는지(호출부 이름만 바뀌었을 뿐 동작은 동일해야 함)
+
+### 다음 작업자 참고
+- `deleteDiaryEntry`는 이번엔 UI에서 아직 아무 데서도 안 씀 (요청받은 CRUD 세트만 먼저 갖춰둔 것). 일기 삭제 버튼이 화면에 생기면 그때 연결하면 됨
