@@ -1,5 +1,5 @@
 import { realEntriesJuly } from './src/data/realEntries';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, GowunBatang_400Regular } from '@expo-google-fonts/gowun-batang';
@@ -15,6 +15,8 @@ import DiaryWriteScreen from './src/screens/DiaryWriteScreen';
 import LetterboxScreen from './src/screens/LetterboxScreen';
 import { entries } from './src/data/mockData';
 import { formatDateLabel } from './src/dateUtils';
+import { getDiaryEntry } from './src/storage';
+import { DiaryEntry } from './src/types';
 
 function todayDateString(): string {
   const now = new Date();
@@ -31,10 +33,30 @@ function AppInner() {
   const [demoMode, setDemoMode] = useState(false);
   const [diaryDate, setDiaryDate] = useState<string | null>(null);
   const [diaryFromLetter, setDiaryFromLetter] = useState(false);
+  const [diaryQuote, setDiaryQuote] = useState<string | null>(null);
   const [writeDate, setWriteDate] = useState<string | null>(null);
+  const [currentEntry, setCurrentEntry] = useState<DiaryEntry | null>(null);
+  const [diaryLoading, setDiaryLoading] = useState(false);
 
   const todayDate = todayDateString();
   const todayLabel = formatDateLabel(todayDate);
+
+  useEffect(() => {
+    if (!diaryDate) {
+      setCurrentEntry(null);
+      return;
+    }
+    let active = true;
+    setDiaryLoading(true);
+    getDiaryEntry(diaryDate).then((saved) => {
+      if (!active) return;
+      setCurrentEntry(saved ?? realEntriesJuly[diaryDate] ?? entries[diaryDate] ?? null);
+      setDiaryLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [diaryDate]);
 
   function handleUnlock() {
     // 데모 모드일 때는 "이번 달 1일 첫 실행"으로 강제 취급해 편지로 바로 진입한다.
@@ -42,15 +64,17 @@ function AppInner() {
     setScreen(demoMode ? 'envelope' : 'home');
   }
 
-  function handleSelectDay(day: number) {
+  async function handleSelectDay(day: number) {
     if (day === 1) {
       setScreen('envelope');
       return;
     }
     const date = `2026-07-${String(day).padStart(2, '0')}`;
-    if (realEntriesJuly[date] || entries[date]) {
+    const saved = await getDiaryEntry(date);
+    if (saved || realEntriesJuly[date] || entries[date]) {
       setDiaryDate(date);
       setDiaryFromLetter(false);
+      setDiaryQuote(null);
       setScreen('diary');
     } else {
       // 안 쓴 날: "놓쳤다"가 아니라 "아직 안 썼다" — 그 날짜 일기 쓰기 화면으로 이동 (plan.md §7 [2])
@@ -59,13 +83,12 @@ function AppInner() {
     }
   }
 
-  function handleQuoteTap(date: string) {
+  function handleQuoteTap(date: string, quote: string) {
     setDiaryDate(date);
     setDiaryFromLetter(true);
+    setDiaryQuote(quote);
     setScreen('diary');
   }
-
-  const currentEntry = diaryDate ? (realEntriesJuly[diaryDate] ?? entries[diaryDate]) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -84,10 +107,16 @@ function AppInner() {
       {screen === 'cal' && <CalendarScreen onBack={() => setScreen('home')} onSelectDay={handleSelectDay} />}
       {screen === 'envelope' && <EnvelopeScreen onOpen={() => setScreen('letter')} />}
       {screen === 'letter' && <LetterScreen onQuoteTap={handleQuoteTap} />}
-      {screen === 'diary' && currentEntry && (
+      {screen === 'diary' && diaryLoading && (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      )}
+      {screen === 'diary' && !diaryLoading && currentEntry && (
         <DiaryDetailScreen
           entry={currentEntry}
           fromLetter={diaryFromLetter}
+          quote={diaryQuote ?? undefined}
           onBack={() => setScreen(diaryFromLetter ? 'letter' : 'cal')}
         />
       )}

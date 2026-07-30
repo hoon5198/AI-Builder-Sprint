@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { getDiaryEntry, saveDiaryEntry } from '../storage';
+import { MailIcon, CalendarIcon } from '../components/icons';
 
 interface Props {
   date: string; // 'YYYY-MM-DD'
@@ -38,10 +39,10 @@ export default function HomeScreen({ date, dateLabel, onOpenCalendar, onOpenLett
         <Text style={[styles.date, { color: colors.text }]}>{dateLabel}</Text>
         <View style={styles.icons}>
           <Pressable onPress={onOpenLetterbox}>
-            <Text style={{ color: colors.sub, fontSize: 13 }}>편지함</Text>
+            <MailIcon color={colors.sub} />
           </Pressable>
           <Pressable onPress={onOpenCalendar}>
-            <Text style={{ color: colors.sub, fontSize: 13 }}>캘린더</Text>
+            <CalendarIcon color={colors.sub} />
           </Pressable>
         </View>
       </View>
