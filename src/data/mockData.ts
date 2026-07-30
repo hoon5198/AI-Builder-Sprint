@@ -1,4 +1,4 @@
-import { DiaryEntry, LetterParagraph } from '../types';
+import { DiaryEntry, LetterParagraph, ReceivedLetter } from '../types';
 
 export const writtenDays = [1, 3, 5, 9, 12, 15, 18, 20, 24, 26, 27, 28];
 
@@ -54,3 +54,7 @@ export const letterParagraphs: LetterParagraph[] = [
 ];
 
 export const letterSignature = '— 7월의 나로부터';
+
+export const receivedLetters: ReceivedLetter[] = [
+  { yearMonth: '2026-07', monthLabel: letterMonthLabel, preview: '잘 지내고 있으려나.' },
+];

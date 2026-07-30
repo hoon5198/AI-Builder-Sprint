@@ -10,9 +10,11 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import EnvelopeScreen from './src/screens/EnvelopeScreen';
 import LetterScreen from './src/screens/LetterScreen';
 import DiaryDetailScreen from './src/screens/DiaryDetailScreen';
+import DiaryWriteScreen from './src/screens/DiaryWriteScreen';
+import LetterboxScreen from './src/screens/LetterboxScreen';
 import { entries } from './src/data/mockData';
 
-type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary';
+type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox';
 
 function AppInner() {
   const { colors } = useTheme();
@@ -20,6 +22,7 @@ function AppInner() {
   const [demoMode, setDemoMode] = useState(false);
   const [diaryDate, setDiaryDate] = useState<string | null>(null);
   const [diaryFromLetter, setDiaryFromLetter] = useState(false);
+  const [writeDate, setWriteDate] = useState<string | null>(null);
 
   const todayLabel = '7월 28일 화요일'; // TODO: 실제 날짜 로직 붙일 때 교체
 
@@ -39,9 +42,11 @@ function AppInner() {
       setDiaryDate(date);
       setDiaryFromLetter(false);
       setScreen('diary');
+    } else {
+      // 안 쓴 날: "놓쳤다"가 아니라 "아직 안 썼다" — 그 날짜 일기 쓰기 화면으로 이동 (plan.md §7 [2])
+      setWriteDate(date);
+      setScreen('write');
     }
-    // 안 쓴 날 탭: 스켈레톤 단계에서는 미구현.
-    // 다음 단계에서 "그 날짜 일기 쓰기" 화면으로 연결해야 함 (plan.md §7 [2]).
   }
 
   function handleQuoteTap(date: string) {
@@ -59,7 +64,11 @@ function AppInner() {
         <LockScreen onUnlock={handleUnlock} demoMode={demoMode} onToggleDemoMode={() => setDemoMode((v) => !v)} />
       )}
       {screen === 'home' && (
-        <HomeScreen dateLabel={todayLabel} onOpenCalendar={() => setScreen('cal')} onOpenLetterbox={() => {}} />
+        <HomeScreen
+          dateLabel={todayLabel}
+          onOpenCalendar={() => setScreen('cal')}
+          onOpenLetterbox={() => setScreen('letterbox')}
+        />
       )}
       {screen === 'cal' && <CalendarScreen onBack={() => setScreen('home')} onSelectDay={handleSelectDay} />}
       {screen === 'envelope' && <EnvelopeScreen onOpen={() => setScreen('letter')} />}
@@ -70,6 +79,12 @@ function AppInner() {
           fromLetter={diaryFromLetter}
           onBack={() => setScreen(diaryFromLetter ? 'letter' : 'cal')}
         />
+      )}
+      {screen === 'write' && writeDate && (
+        <DiaryWriteScreen date={writeDate} onBack={() => setScreen('cal')} onSaved={() => setScreen('cal')} />
+      )}
+      {screen === 'letterbox' && (
+        <LetterboxScreen onBack={() => setScreen('home')} onSelectLetter={() => setScreen('envelope')} />
       )}
     </View>
   );
