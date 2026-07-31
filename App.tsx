@@ -1,4 +1,4 @@
-import { realEntriesJuly } from './src/data/realEntries';
+import { julyDiary } from './src/data/julyDiary';
 import React, { useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -39,7 +39,7 @@ function AppInner() {
       return;
     }
     const date = `2026-07-${String(day).padStart(2, '0')}`;
-    if (realEntriesJuly[date] || entries[date]) {
+    if (julyDiary[date] || entries[date]) {
       setDiaryDate(date);
       setDiaryFromLetter(false);
       setScreen('diary');
@@ -56,7 +56,7 @@ function AppInner() {
     setScreen('diary');
   }
 
-  const currentEntry = diaryDate ? (realEntriesJuly[diaryDate] ?? entries[diaryDate]) : null;
+  const currentEntry = diaryDate ? (julyDiary[diaryDate] ?? entries[diaryDate]) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>

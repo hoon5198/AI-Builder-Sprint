@@ -7,8 +7,8 @@ import {
   letterSignature as mockSignature,
 } from '../data/mockData';
 import { generateLetter } from '../pipeline/generateLetter';
-import { realSignalsJuly } from '../pipeline/realSignals';
-import { realEntriesJuly } from '../data/realEntries';
+import { julySignals } from '../pipeline/julySignals';
+import { julyDiary } from '../data/julyDiary';
 import { DiaryEntry, LetterParagraph } from '../types';
 
 interface Props {
@@ -24,10 +24,10 @@ export default function LetterScreen({ onQuoteTap }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const getRealEntry = async (date: string): Promise<DiaryEntry | null> =>
-      realEntriesJuly[date] ?? null;
+    const getJulyEntry = async (date: string): Promise<DiaryEntry | null> =>
+      julyDiary[date] ?? null;
 
-    generateLetter(realSignalsJuly, '2026년 7월', getRealEntry, '2026-07-real-test')
+    generateLetter(julySignals, '2026년 7월', getJulyEntry, '2026-07-julydiary')
       .then((result) => {
         if (cancelled) return;
         if (result.paragraphs.length > 0) {
