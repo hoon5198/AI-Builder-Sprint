@@ -19,6 +19,7 @@ export async function generateLetter(
   getEntryByDate: (date: string) => Promise<DiaryEntry | null>,
   yearMonth: string
 ): Promise<{ paragraphs: LetterParagraph[]; signature: string }> {
+  console.log('[generateLetter 시작]');
   // 1. 캐시부터 확인
   try {
     const cached = await AsyncStorage.getItem(cacheKey(yearMonth));
