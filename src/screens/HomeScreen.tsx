@@ -1,19 +1,22 @@
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
+import DismissKeyboardView from '../components/DismissKeyboardView';
 
 interface Props {
   dateLabel: string;
   onOpenCalendar: () => void;
   onOpenLetterbox: () => void;
+  onPickPhoto: (uri: string) => void;
 }
 
-export default function HomeScreen({ dateLabel, onOpenCalendar, onOpenLetterbox }: Props) {
+export default function HomeScreen({ dateLabel, onOpenCalendar, onOpenLetterbox, onPickPhoto }: Props) {
   const { colors } = useTheme();
   const [text, setText] = useState('');
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <DismissKeyboardView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.top}>
         <Text style={[styles.date, { color: colors.text }]}>{dateLabel}</Text>
         <View style={styles.icons}>
@@ -35,12 +38,23 @@ export default function HomeScreen({ dateLabel, onOpenCalendar, onOpenLetterbox 
         onChangeText={setText}
       />
       <View style={[styles.foot, { borderTopColor: colors.line }]}>
-        <Text style={{ color: colors.sub, fontSize: 13 }}>사진</Text>
+        <Pressable
+          onPress={async () => {
+            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permission.granted) return;
+            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+            if (!result.canceled && result.assets[0]) {
+              onPickPhoto(result.assets[0].uri);
+            }
+          }}
+        >
+  <Text style={{ color: colors.sub, fontSize: 13 }}>사진</Text>
+</Pressable>
         <Pressable style={[styles.saveBtn, { backgroundColor: colors.accent }]}>
           <Text style={{ color: colors.bg, fontSize: 14 }}>저장</Text>
         </Pressable>
       </View>
-    </View>
+    </DismissKeyboardView>
   );
 }
 

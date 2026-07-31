@@ -1,5 +1,5 @@
 import { julyDiary } from './src/data/julyDiary';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, GowunBatang_400Regular } from '@expo-google-fonts/gowun-batang';
@@ -13,9 +13,13 @@ import LetterScreen from './src/screens/LetterScreen';
 import DiaryDetailScreen from './src/screens/DiaryDetailScreen';
 import DiaryWriteScreen from './src/screens/DiaryWriteScreen';
 import LetterboxScreen from './src/screens/LetterboxScreen';
+import OcrReviewScreen from './src/screens/OcrReviewScreen';
 import { entries } from './src/data/mockData';
+import { getEntry, saveEntry } from './src/storage';
+import { formatDateLabel } from './src/dateUtils';
+import { DiaryEntry } from './src/types';
 
-type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox';
+type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox' | 'ocr';
 
 function AppInner() {
   const { colors } = useTheme();
@@ -24,6 +28,8 @@ function AppInner() {
   const [diaryDate, setDiaryDate] = useState<string | null>(null);
   const [diaryFromLetter, setDiaryFromLetter] = useState(false);
   const [writeDate, setWriteDate] = useState<string | null>(null);
+  const [ocrImageUri, setOcrImageUri] = useState<string | null>(null);
+  const [currentEntry, setCurrentEntry] = useState<DiaryEntry | null>(null);
 
   const todayLabel = '7월 28일 화요일'; // TODO: 실제 날짜 로직 붙일 때 교체
 
@@ -56,7 +62,22 @@ function AppInner() {
     setScreen('diary');
   }
 
-  const currentEntry = diaryDate ? (julyDiary[diaryDate] ?? entries[diaryDate]) : null;
+  // diaryDate가 바뀔 때마다: storage.ts(진짜 저장된 것) → julyDiary(테스트 데이터) → mockData 순으로 조회
+  useEffect(() => {
+    if (!diaryDate) {
+      setCurrentEntry(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const stored = await getEntry(diaryDate);
+      if (cancelled) return;
+      setCurrentEntry(stored ?? julyDiary[diaryDate] ?? entries[diaryDate] ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [diaryDate]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -69,11 +90,15 @@ function AppInner() {
           dateLabel={todayLabel}
           onOpenCalendar={() => setScreen('cal')}
           onOpenLetterbox={() => setScreen('letterbox')}
+          onPickPhoto={(uri) => {
+            setOcrImageUri(uri);
+            setScreen('ocr');
+          }}
         />
       )}
       {screen === 'cal' && <CalendarScreen onBack={() => setScreen('home')} onSelectDay={handleSelectDay} />}
       {screen === 'envelope' && <EnvelopeScreen onOpen={() => setScreen('letter')} />}
-      {screen === 'letter' && <LetterScreen onQuoteTap={handleQuoteTap} />}
+      {screen === 'letter' && <LetterScreen onQuoteTap={handleQuoteTap} onBack={() => setScreen('home')} />}
       {screen === 'diary' && currentEntry && (
         <DiaryDetailScreen
           entry={currentEntry}
@@ -83,6 +108,27 @@ function AppInner() {
       )}
       {screen === 'write' && writeDate && (
         <DiaryWriteScreen date={writeDate} onBack={() => setScreen('cal')} onSaved={() => setScreen('cal')} />
+      )}
+      {screen === 'ocr' && ocrImageUri && (
+        <OcrReviewScreen
+          imageUri={ocrImageUri}
+          onCancel={() => setScreen('home')}
+          onConfirm={async (text) => {
+            const today = '2026-07-28';
+            console.log('[OCR 저장 시도]', today, text.slice(0, 20));
+            try {
+              await saveEntry({
+                date: today,
+                dateLabel: formatDateLabel(today),
+                body: text,
+              });
+              console.log('[OCR 저장 성공]');
+            } catch (err) {
+              console.error('[OCR 저장 실패]', err);
+            }
+            setScreen('home');
+          }}
+        />
       )}
       {screen === 'letterbox' && (
         <LetterboxScreen onBack={() => setScreen('home')} onSelectLetter={() => setScreen('envelope')} />

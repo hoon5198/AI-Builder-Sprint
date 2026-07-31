@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import {
   letterMonthLabel as mockMonthLabel,
@@ -13,9 +13,10 @@ import { DiaryEntry, LetterParagraph } from '../types';
 
 interface Props {
   onQuoteTap: (date: string) => void;
+  onBack: () => void;
 }
 
-export default function LetterScreen({ onQuoteTap }: Props) {
+export default function LetterScreen({ onQuoteTap, onBack }: Props) {
   const { colors } = useTheme();
   const [monthLabel, setMonthLabel] = useState(mockMonthLabel);
   const [paragraphs, setParagraphs] = useState<LetterParagraph[]>(mockParagraphs);
@@ -57,6 +58,9 @@ export default function LetterScreen({ onQuoteTap }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Pressable onPress={onBack} style={styles.backRow}>
+        <Text style={{ color: colors.sub, fontSize: 13 }}>‹ 홈으로</Text>
+      </Pressable>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.month, { color: colors.sub }]}>{monthLabel}</Text>
         {paragraphs.map((para, i) => (
@@ -85,6 +89,7 @@ export default function LetterScreen({ onQuoteTap }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 52, paddingHorizontal: 26, paddingBottom: 26 },
   centerLoading: { alignItems: 'center', justifyContent: 'center' },
+  backRow: { marginBottom: 16},
   scroll: { flex: 1 },
   month: { fontFamily: 'GowunBatang_400Regular', fontSize: 13, textAlign: 'center', marginBottom: 26 },
   paragraph: { fontFamily: 'GowunBatang_400Regular', fontSize: 15.5, lineHeight: 31, marginBottom: 22 },
