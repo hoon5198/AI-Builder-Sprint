@@ -236,3 +236,10 @@ interface ExtractedSignal {
 ### .env 관련
 - `.env.example` 파일은 따로 만들지 않기로 함 — 필요한 환경변수(`EXPO_PUBLIC_UPSTAGE_API_KEY`)를 팀원들에게 직접 구두/메시지로 안내함
 - 새로 합류하거나 새 컴퓨터에서 시작하는 사람은 프로젝트 루트에 `.env` 파일을 직접 만들고 아래 한 줄을 넣을 것:
+
+## 2026-07-31 (추가) — extract.ts 실제 결과로 최종 연결
+
+- 사람2의 extract.ts 완성분(good_day, unspoken_effort 7개, yebbinie 브랜치 `src/pipeline/fixtures/july-signals.json`) 반영
+- repeated/faded는 아직 미구현 (②태깅 의존) — extract.ts 파일 상단 주석에도 명시됨. 사람2가 손으로 후보 짚어놓음(잠/보고서/지갑), 내일 만나서 마저 구현 예정
+- generateLetter.ts 캐시에 신호 해시 비교 로직 추가 — 신호 내용이 바뀌면 캐시 자동 무효화되도록 수정 (이전엔 신호 바꿔도 옛날 캐시가 계속 재사용되는 버그 있었음)
+- tsconfig.json에 resolveJsonModule 추가 (JSON 파일 import 위해 필요)
