@@ -137,3 +137,54 @@ interface ExtractedSignal {
 - 작업 시작 전에 본인 브랜치에서 `git fetch origin` + `git merge origin/main` 먼저 해서 최신 상태로 맞춰줘
 - `getEntriesForMonth`는 비동기(`Promise<DiaryEntry[]>`)인 거 위쪽에 이미 적혀있으니 참고
 - 사람2 → 사람3으로 넘길 `ExtractedSignal` 타입은 위에서 확정됨 (`src/pipeline/types.ts`), 이 타입 그대로 맞춰서 `extract.ts` 결과를 만들어주면 됨
+
+## 2026-07-30 (추가) — 사람3: 조립·검증 파이프라인 완성, 실기기 검증 완료
+
+### 사용 API 변경
+- 당초 Claude API로 시작했으나, 대회 지원 크레딧이 있는 **Upstage Solar API로 변경**
+- 엔드포인트: `https://api.upstage.ai/v1/chat/completions` (OpenAI 호환 형식)
+- 모델: `solar-pro3`
+- API 키는 `.env`의 `EXPO_PUBLIC_UPSTAGE_API_KEY`로 관리 (`.gitignore`에 이미 포함, git엔 안 올라감)
+- ⚠️ CLAUDE.md엔 "백엔드 서버 안 씀"이라고 되어 있는데, API 키를 클라이언트(앱)에 그대로 노출하는 구조임.
+  해커톤 데모 프로토타입이라는 전제로 감수하기로 함. 실제 서비스라면 이 구조는 바꿔야 함.
+
+### 새로 만든 파일
+- `src/pipeline/types.ts` — `ExtractedSignal` 타입 정의 (사람2 ↔ 사람3 인터페이스)
+  ```ts
+  interface ExtractedSignal {
+    category: 'repeated' | 'faded' | 'unspoken_effort';
+    quote: string;
+    date: string; // YYYY-MM-DD
+  }
+  ```
+- `src/pipeline/assemble.ts` — Upstage API로 편지 조립 (④조립)
+- `src/pipeline/verify.ts` — 원본 일기와 인용 대조, 불일치 시 문단째 제거 (⑤검증, 순수 코드)
+- `src/pipeline/generateLetter.ts` — assemble + verify 연결, AsyncStorage 캐싱 포함
+- `src/data/realEntries.ts` — 지문 실제 7월 일기 5개 (파이프라인 실데이터 테스트용)
+- `src/pipeline/realSignals.ts` — 위 데이터에서 수동으로 고른 신호 3개 (전부 `unspoken_effort`)
+- `LetterScreen.tsx`, `App.tsx` — 위 파이프라인 실제 연결. 실패 시 mock 편지로 자동 대체됨 (안전장치)
+
+### 조립 단계에서 겪은 문제와 해결 (다음에 프롬프트 건드릴 사람 참고용)
+1. **모델이 다음 달 조언을 씀** ("~하면 좋겠다" 등, SKILL.md §9 위반) → 프롬프트에 실제 채택 편지 예시 추가해서 해결
+2. **모델이 인용 문장을 자기 말로 바꿔 씀 + 사실을 반대로 지어냄** (예: "이 말은 적지 않았어"라고 반대로 서술) →
+   - 인용 자리에 `{{Q1}}` 같은 표시만 넣게 하고, 실제 텍스트는 코드에서 채워 넣는 방식으로 변경 (LLM이 원문을 직접 못 쓰게 구조적으로 차단)
+   - `assemble.ts`에 인용 개수 검증 로직 추가, 안 맞으면 최대 3번 재시도
+3. **모델이 `{{Q1}}` 표시 앞뒤에 원문을 중복으로 씀** → `stripDuplicatedQuoteText()` 함수로 자동 후처리 (정규식 치환)
+4. **모델이 프롬프트의 예시 문장(고양이, 벤치 등)을 실제 내용인 것처럼 복붙함** → 프롬프트의 예시를 구체적 문장에서 자리표시 형태로 교체
+5. **서로 다른 문단의 이어주는 텍스트가 통째로 똑같이 나옴** → `assemble.ts`에 문단 간 텍스트 중복 검사 추가, 걸리면 재시도
+6. 위 5가지 다 잡은 뒤에도 미묘한 문제가 종종 남을 수 있음 (예: 인용은 정확한데 그 앞뒤 서술이 논리적으로 살짝 모순되는 경우). 이건 문자열 대조로 못 잡는 영역이라 **완전 자동화는 포기하고, 발표 전 사람이 실제 편지 몇 개를 눈으로 검수하는 과정을 반드시 넣기로 함**
+
+### 캐싱 관련
+- `generateLetter`는 AsyncStorage에 `letter-cache:{yearMonth}` 키로 결과를 캐싱함
+- 최초 생성은 (재시도 포함) 40~50초까지 걸릴 수 있음. 이후엔 캐시로 즉시 로드됨
+- 발표 당일 API 장애 대비도 겸함 — 미리 한 번 생성해서 캐시를 만들어두면, 그 이후엔 API가 죽어도 편지가 뜸
+- **개발 중 프롬프트를 계속 고칠 때는 캐시가 옛날 결과를 계속 보여줄 수 있음.** 이 경우 AsyncStorage의 `letter-cache:2026-07` 키를 수동으로 지우거나, 테스트용으로 다른 yearMonth 키(`2026-07-real-test` 등)를 쓸 것
+
+### 확인 완료
+- `tsx`로 터미널에서 가짜 데이터 테스트 완료 (assemble, verify 각각 + 연결)
+- 실기기(Expo Go)에서 지문의 진짜 7월 데이터로 편지 생성 → 인용 탭 → 원본 일기 이동까지 전체 흐름 확인 완료
+
+### 다음 할 일 (사람3)
+- 사람2의 `extract.ts` 완성되면, `realSignals.ts`의 수동 데이터를 `extract.ts` 결과로 교체
+- 시간 남으면 OCR(Upstage Document Parse) 연동 — 우선순위 낮음, 8/2 밤까지도 안 되면 포기 가능
+- 실데이터가 5개뿐이라 '반복된 감정'/'사라진 걱정' 카테고리는 아직 의미 있게 테스트 못 함. 팀원 실데이터(§14, 아직 아무도 수집 안 함) 더 모이면 재테스트 필요
