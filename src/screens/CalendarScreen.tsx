@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { entries as mockEntries } from '../data/mockData';
-import { realEntriesJuly } from '../data/realEntries';
 import { getEntriesForMonth } from '../storage';
 import { julyDiary } from '../data/julyDiary';
 
@@ -23,7 +22,6 @@ function dayOf(dateKey: string): number {
 
 const demoWrittenDays = new Set([
   ...Object.keys(mockEntries).map(dayOf),
-  ...Object.keys(realEntriesJuly).map(dayOf),
   ...Object.keys(julyDiary).map(dayOf),
 ]);
 
