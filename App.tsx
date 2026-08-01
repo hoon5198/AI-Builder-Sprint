@@ -15,9 +15,16 @@ import DiaryWriteScreen from './src/screens/DiaryWriteScreen';
 import LetterboxScreen from './src/screens/LetterboxScreen';
 import OcrReviewScreen from './src/screens/OcrReviewScreen';
 import { entries } from './src/data/mockData';
-import { getEntry, saveEntry } from './src/storage';
 import { formatDateLabel } from './src/dateUtils';
+import { getDiaryEntry, saveDiaryEntry } from './src/storage';
 import { DiaryEntry } from './src/types';
+
+function todayDateString(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox' | 'ocr';
 
@@ -27,11 +34,31 @@ function AppInner() {
   const [demoMode, setDemoMode] = useState(false);
   const [diaryDate, setDiaryDate] = useState<string | null>(null);
   const [diaryFromLetter, setDiaryFromLetter] = useState(false);
+  const [diaryQuote, setDiaryQuote] = useState<string | null>(null);
   const [writeDate, setWriteDate] = useState<string | null>(null);
   const [ocrImageUri, setOcrImageUri] = useState<string | null>(null);
   const [currentEntry, setCurrentEntry] = useState<DiaryEntry | null>(null);
+  const [diaryLoading, setDiaryLoading] = useState(false);
 
-  const todayLabel = '7월 28일 화요일'; // TODO: 실제 날짜 로직 붙일 때 교체
+  const todayDate = todayDateString();
+  const todayLabel = formatDateLabel(todayDate);
+
+  useEffect(() => {
+    if (!diaryDate) {
+      setCurrentEntry(null);
+      return;
+    }
+    let active = true;
+    setDiaryLoading(true);
+    getDiaryEntry(diaryDate).then((saved) => {
+      if (!active) return;
+      setCurrentEntry(saved ?? julyDiary[diaryDate] ?? entries[diaryDate] ?? null);
+      setDiaryLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [diaryDate]);
 
   function handleUnlock() {
     // 데모 모드일 때는 "이번 달 1일 첫 실행"으로 강제 취급해 편지로 바로 진입한다.
@@ -39,15 +66,17 @@ function AppInner() {
     setScreen(demoMode ? 'envelope' : 'home');
   }
 
-  function handleSelectDay(day: number) {
+  async function handleSelectDay(day: number) {
     if (day === 1) {
       setScreen('envelope');
       return;
     }
     const date = `2026-07-${String(day).padStart(2, '0')}`;
-    if (julyDiary[date] || entries[date]) {
+    const saved = await getDiaryEntry(date);
+    if (saved || julyDiary[date] || entries[date]) {
       setDiaryDate(date);
       setDiaryFromLetter(false);
+      setDiaryQuote(null);
       setScreen('diary');
     } else {
       // 안 쓴 날: "놓쳤다"가 아니라 "아직 안 썼다" — 그 날짜 일기 쓰기 화면으로 이동 (plan.md §7 [2])
@@ -56,28 +85,12 @@ function AppInner() {
     }
   }
 
-  function handleQuoteTap(date: string) {
+  function handleQuoteTap(date: string, quote: string) {
     setDiaryDate(date);
     setDiaryFromLetter(true);
+    setDiaryQuote(quote);
     setScreen('diary');
   }
-
-  // diaryDate가 바뀔 때마다: storage.ts(진짜 저장된 것) → julyDiary(테스트 데이터) → mockData 순으로 조회
-  useEffect(() => {
-    if (!diaryDate) {
-      setCurrentEntry(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const stored = await getEntry(diaryDate);
-      if (cancelled) return;
-      setCurrentEntry(stored ?? julyDiary[diaryDate] ?? entries[diaryDate] ?? null);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [diaryDate]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -87,6 +100,7 @@ function AppInner() {
       )}
       {screen === 'home' && (
         <HomeScreen
+          date={todayDate}
           dateLabel={todayLabel}
           onOpenCalendar={() => setScreen('cal')}
           onOpenLetterbox={() => setScreen('letterbox')}
@@ -99,10 +113,16 @@ function AppInner() {
       {screen === 'cal' && <CalendarScreen onBack={() => setScreen('home')} onSelectDay={handleSelectDay} />}
       {screen === 'envelope' && <EnvelopeScreen onOpen={() => setScreen('letter')} />}
       {screen === 'letter' && <LetterScreen onQuoteTap={handleQuoteTap} onBack={() => setScreen('home')} />}
-      {screen === 'diary' && currentEntry && (
+      {screen === 'diary' && diaryLoading && (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      )}
+      {screen === 'diary' && !diaryLoading && currentEntry && (
         <DiaryDetailScreen
           entry={currentEntry}
           fromLetter={diaryFromLetter}
+          quote={diaryQuote ?? undefined}
           onBack={() => setScreen(diaryFromLetter ? 'letter' : 'cal')}
         />
       )}
@@ -114,14 +134,9 @@ function AppInner() {
           imageUri={ocrImageUri}
           onCancel={() => setScreen('home')}
           onConfirm={async (text) => {
-            const today = '2026-07-28';
-            console.log('[OCR 저장 시도]', today, text.slice(0, 20));
+            console.log('[OCR 저장 시도]', todayDate, text.slice(0, 20));
             try {
-              await saveEntry({
-                date: today,
-                dateLabel: formatDateLabel(today),
-                body: text,
-              });
+              await saveDiaryEntry(todayDate, text);
               console.log('[OCR 저장 성공]');
             } catch (err) {
               console.error('[OCR 저장 실패]', err);

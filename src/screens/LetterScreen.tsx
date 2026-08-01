@@ -12,7 +12,7 @@ import { julyDiary } from '../data/julyDiary';
 import { DiaryEntry, LetterParagraph } from '../types';
 
 interface Props {
-  onQuoteTap: (date: string) => void;
+onQuoteTap: (date: string, quote: string) => void;
   onBack: () => void;
 }
 
@@ -69,7 +69,7 @@ export default function LetterScreen({ onQuoteTap, onBack }: Props) {
               seg.type === 'quote' ? (
                 <Text
                   key={j}
-                  onPress={() => onQuoteTap(seg.date)}
+                  onPress={() => onQuoteTap(seg.date, seg.content)}
                   style={[styles.quote, { color: colors.accent, borderBottomColor: colors.accent }]}
                 >
                   {seg.content}

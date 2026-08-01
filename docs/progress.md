@@ -243,3 +243,63 @@ interface ExtractedSignal {
 - repeated/faded는 아직 미구현 (②태깅 의존) — extract.ts 파일 상단 주석에도 명시됨. 사람2가 손으로 후보 짚어놓음(잠/보고서/지갑), 내일 만나서 마저 구현 예정
 - generateLetter.ts 캐시에 신호 해시 비교 로직 추가 — 신호 내용이 바뀌면 캐시 자동 무효화되도록 수정 (이전엔 신호 바꿔도 옛날 캐시가 계속 재사용되는 버그 있었음)
 - tsconfig.json에 resolveJsonModule 추가 (JSON 파일 import 위해 필요)
+## 2026-07-31 — 사람1: 저장소(storage.ts) CRUD 정리, 홈 화면 저장 버튼 연결
+
+### AsyncStorage
+- `@react-native-async-storage/async-storage@2.2.0` 이미 설치돼 있었음(`npx expo install --check` 통과, SDK 54와 호환). 새로 설치한 것 없음
+
+### `src/storage.ts` 함수 이름 변경 + 신규 추가
+- 기존 `getEntry(date)` / `saveEntry(entry: DiaryEntry)` → `getDiaryEntry(date)` / `saveDiaryEntry(date, content)`로 이름 변경
+  - `saveDiaryEntry`는 `(date, content)` 두 인자만 받고, `dateLabel`은 내부에서 `formatDateLabel(date)`로 자동 생성함. 기존 `highlight` 필드가 있던 항목은 덮어쓰지 않고 그대로 유지(스프레드 후 `body`만 교체)
+  - **호출부가 있으면 이 이름으로 맞춰서 고쳐야 함** — 오늘 `src/screens/DiaryWriteScreen.tsx`의 호출부도 같이 바꿔놨음
+- `deleteDiaryEntry(date)` 신규 추가 (지금까지 없었음)
+- `getEntriesForMonth(yearMonth)`는 손대지 않음 — 이미 사람2와 공유된 시그니처(`Promise<DiaryEntry[]>`)라 그대로 둠
+- AsyncStorage 키 구조는 그대로: 단일 키 `chohyaru:diaryEntries`에 `{ [date]: DiaryEntry }` 통짜 오브젝트. 날짜별 개별 키로 바꾸지 않음 (한 달 최대 31건 수준이라 안 바꿔도 됨, `getEntriesForMonth` 구현이 이 구조 전제)
+
+### 홈 화면(오늘 일기) 저장 기능 실제 연결
+- `App.tsx`: 하드코딩돼 있던 `todayLabel = '7월 28일 화요일'` TODO를 실제 `new Date()` 기반 `YYYY-MM-DD` + `formatDateLabel`로 교체. `HomeScreen`에 `date` prop으로 오늘 날짜 문자열을 넘겨줌
+- `src/screens/HomeScreen.tsx`:
+  - 진입 시 `getDiaryEntry(오늘 날짜)`로 기존에 쓴 게 있으면 불러와서 이어쓰기 (plan.md §7 [1] "오늘 이미 쓴 게 있으면 이어쓰기" — 지금까지 빈 입력창만 있던 부분이라 이번에 같이 채움)
+  - 저장 버튼 `onPress` → `saveDiaryEntry(date, text)` 연결 (기존엔 버튼에 `onPress` 자체가 없었음)
+  - 저장 성공 시 버튼 옆에 `--sub` 색 텍스트로 "저장됨"이 1.5초간 떴다 사라짐. 토스트/스낵바 같은 팝업은 디자인 스킬 기준(카드·그림자 없음, 앱이 말을 많이 안 걺)에 안 맞아서 인라인 텍스트로 처리함. 화면 이동은 안 함 — 홈 자체가 "오늘 일기" 화면이라 이동할 곳이 없음
+
+### 확인한 것 / 못 한 것
+- `npx tsc --noEmit`: 이번에 건드린 파일(`App.tsx`, `HomeScreen.tsx`, `DiaryWriteScreen.tsx`, `storage.ts`) 관련 에러 없음. (참고: `frontend/` 폴더에 별개의 미사용 스캐폴드 관련 에러가 이미 있었는데, 이번 작업과 무관 — 안 건드림)
+- **실기기(Expo Go) 확인은 못 함.** 폰을 직접 조작할 수 있는 도구가 없어서, 이번 세션에서 `npx expo start`로 Metro 서버(`http://localhost:8081`)만 띄워놓고 팀원에게 실기기 확인을 요청함. 확인해야 할 것: ① 오늘 일기 입력 후 저장 → "저장됨" 텍스트가 잠깐 뜨는지 ② 앱을 껐다 켜거나 캘린더 갔다 왔을 때 저장한 내용이 남아있는지(이어쓰기) ③ 캘린더에서 "안 쓴 날" 탭 → 일기 쓰기 화면 저장도 계속 정상 동작하는지(호출부 이름만 바뀌었을 뿐 동작은 동일해야 함)
+
+### 다음 작업자 참고
+- `deleteDiaryEntry`는 이번엔 UI에서 아직 아무 데서도 안 씀 (요청받은 CRUD 세트만 먼저 갖춰둔 것). 일기 삭제 버튼이 화면에 생기면 그때 연결하면 됨
+
+## 2026-07-31 (추가) — 사람1: SVG 아이콘·봉투 플랩 다듬기 + plan.md §12 "7/31 목표" 점검
+
+### `react-native-svg` 설치 + 아이콘/봉투 플랩 마감
+- `npx expo install react-native-svg` → `15.12.1` (SDK 54 호환 버전 자동 해결)
+- `src/components/icons.tsx` 신규 — `MailIcon`/`CalendarIcon`, `prototype.html`의 SVG path 그대로 옮김, stroke 1.4px (SKILL.md §7)
+- `HomeScreen.tsx`의 "편지함"/"캘린더" 텍스트 라벨 → 위 아이콘으로 교체
+- `EnvelopeScreen.tsx`의 사각형 플랩 View → `react-native-svg` `Polygon`으로 삼각형 처리 (`prototype.html`의 `clip-path: polygon(0 0, 100% 0, 50% 100%)`와 동일한 좌표)
+- 진행 기록에 남아있던 "의도적으로 단순화한 부분" 2건(2026-07-29 항목) 모두 해소됨
+
+### plan.md §12 "7/31 목표: 편지 화면 · 문장 탭 이동 · 편지 톤 프롬프트" 점검 결과
+사람3이 7/30에 미리 끝내놓은 항목이라 오늘은 검증만 했는데, **문장 탭 → 하이라이트가 실데이터에서 동작하지 않는 버그**를 발견함.
+
+- `LetterScreen.tsx:68` — `onQuoteTap(seg.date)`로 **날짜만** 넘기고 실제 인용 문구(`seg.content`)는 버림
+- `DiaryDetailScreen.tsx:14` — 하이라이트 여부를 그 날짜 일기의 **정적 필드** `entry.highlight`로만 판단
+- `src/data/realEntries.ts`(실데모 데이터 5건)엔 `highlight` 필드가 **하나도 없음** — `mockData.ts`만 하드코딩으로 갖고 있어서, 지금까지 실기기 검증(7/30 로그)에서도 이 하이라이트 자체는 눈으로 확인 안 된 채 통과된 것으로 보임
+- 결과: 편지 화면에서 문장 탭 → 그날 일기로 이동은 되지만(네비게이션 OK), 인용된 문장 하이라이트는 실데이터 경로에서 항상 비어 있음. plan.md §7 [5]가 "핵심 감동 포인트"라고 명시한 기능이고, 시연 경로("문장 탭 → 그날 일기로 이동") 한가운데 걸려 있어서 **발표 전 반드시 고쳐야 함**
+- 고치려면 `onQuoteTap` 시그니처에 인용 문구를 같이 넘기거나, `DiaryDetailScreen`에서 날짜만으로 하이라이트를 다시 찾는 방식이 필요 — `LetterScreen.tsx`는 사람3 파일이라 손대기 전 공유 필요
+- **수정 완료** (같은 날 이어서 처리, 사람3 파일까지 포함해서 반영):
+  - `LetterScreen.tsx` — `onQuoteTap(seg.date)` → `onQuoteTap(seg.date, seg.content)`로 인용 문구도 같이 넘기게 변경
+  - `App.tsx` — `diaryQuote` state 추가, `handleQuoteTap(date, quote)`로 확장해 저장, `DiaryDetailScreen`에 `quote` prop으로 전달. `handleSelectDay`(캘린더에서 진입)에서는 `diaryQuote`를 `null`로 리셋해 이전 인용이 새로 연 일기에 안 새게 함
+  - `DiaryDetailScreen.tsx` — `quote` prop 추가. 하이라이트 판단 우선순위: ① 넘어온 `quote`가 `entry.body`에 실제로 있으면 그걸 사용(실데이터 경로, `verify.ts`가 이미 존재를 보장) ② 없으면 기존 `entry.highlight` 폴백(목데이터 스켈레톤 경로 — `letterParagraphs`의 인용 문구와 `mockData.entries`의 `highlight` 필드가 손으로 쓰여 서로 정확히 안 맞아서 그대로 유지)
+  - `npx tsc --noEmit` 통과 (frontend/ 미사용 스캐폴드 에러 제외 시 에러 없음)
+  - 실기기 확인은 아직 못 함 — 다음에 폰으로 편지 화면 → 문장 탭 → 하이라이트 뜨는지 확인 필요
+
+### 캘린더 ↔ storage 연동 (7/29 이월 항목) — 완료
+- `CalendarScreen.tsx` 수정: 마운트 시 `storage.ts`의 `getEntriesForMonth('2026-07')`를 호출해 실제 저장된 날짜를 가져오고, 기존 데모 데이터(`mockData.entries`, `realEntries.ts`의 `realEntriesJuly`)의 날짜와 합쳐서 "쓴 날" 집합을 계산하도록 변경. `writtenDays`가 더 이상 하드코딩 배열이 아니라 이 결합 결과의 `useState`
+- 오늘 홈 화면이나 "안 쓴 날" 쓰기 화면에서 새로 저장한 일기가 캘린더 점에 즉시 반영됨 (화면이 매번 새로 마운트되는 구조라 재진입 시 재조회됨)
+### `App.tsx` 캘린더 탭 라우팅에 AsyncStorage 반영 — 완료
+- `handleSelectDay`를 async로 변경: `getDiaryEntry(date)`를 먼저 조회해서, storage/mock/real 어디에든 일기가 있으면 `diary` 화면으로, 셋 다 없을 때만 `write` 화면으로 분기. 이제 AsyncStorage에만 있는 날짜를 탭해도 '일기 상세'로 정확히 감 (plan.md 화면 흐름도: 캘린더→일기 상세)
+- `currentEntry`를 동기 계산에서 `useState` + `useEffect`(diaryDate 변경 시 `getDiaryEntry` 조회, 우선순위: storage → `realEntriesJuly` → mock `entries`)로 전환. 조회 중엔 `diaryLoading` 상태로 짧게 `ActivityIndicator` 표시 (LetterScreen과 같은 패턴)
+- `handleQuoteTap`(편지에서 문장 탭)은 손대지 않음 — `diaryDate`만 바꾸면 위 `useEffect`가 알아서 storage 우선으로 다시 조회하므로 자동으로 같은 혜택을 받음
+- `npx tsc --noEmit` 통과 (frontend/ 미사용 스캐폴드 에러 제외 시 에러 없음)
+- 실기기 확인은 아직 못 함 — 다음에 폰으로 ① 오늘 홈에서 일기 저장 → 캘린더 갔다가 그 날짜 다시 탭 → 일기 상세로 바로 가는지 ② 안 쓴 날은 여전히 '일기 쓰기'로 가는지 확인 필요

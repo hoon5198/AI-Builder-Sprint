@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
-import { writtenDays } from '../data/mockData';
+import { entries as mockEntries } from '../data/mockData';
+import { realEntriesJuly } from '../data/realEntries';
+import { getEntriesForMonth } from '../storage';
 
 interface Props {
   onBack: () => void;
@@ -12,10 +14,34 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const LEADING_BLANKS = 3; // 2026년 7월 1일은 수요일
 const DAYS_IN_MONTH = 31;
 const CELL = `${100 / 7}%` as const;
+const YEAR_MONTH = '2026-07';
+
+function dayOf(dateKey: string): number {
+  return Number(dateKey.slice(-2));
+}
+
+const demoWrittenDays = new Set([
+  ...Object.keys(mockEntries).map(dayOf),
+  ...Object.keys(realEntriesJuly).map(dayOf),
+]);
 
 export default function CalendarScreen({ onBack, onSelectDay }: Props) {
   const { colors } = useTheme();
   const days = Array.from({ length: DAYS_IN_MONTH }, (_, i) => i + 1);
+  const [writtenDays, setWrittenDays] = useState<number[]>(Array.from(demoWrittenDays));
+
+  useEffect(() => {
+    let active = true;
+    getEntriesForMonth(YEAR_MONTH).then((saved) => {
+      if (!active) return;
+      const merged = new Set(demoWrittenDays);
+      saved.forEach((entry) => merged.add(dayOf(entry.date)));
+      setWrittenDays(Array.from(merged));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
