@@ -46,9 +46,10 @@ const SYSTEM_PROMPT = `당신은 지난달의 "나"가 되어 다음 달의 나�
 function buildUserPrompt(signals: ExtractedSignal[], monthLabel: string): string {
   const categoryLabel: Record<string, string> = {
     repeated: '반복해서 나온 감정',
-    faded: '전반부엔 있었는데 후반부에 사라진 얘기',
-    good_day: '좋았던 날, 웃겼던 날, 별거 없던 평범한 날 (힘든 얘기만 나열되지 않게 균형을 맞추는 용도)',
-    unspoken_effort: '실제로 일기에 적혀 있는, 담담하게 쓴 노력·성취 (이 사람이 대수롭지 않게 여겼을 뿐, 분명히 일기에 쓴 문장임)',
+    faded: '전반부엔 있었는데 후반부에 그냥 사라진 얘기 (해결됐다는 언급 없이 그냥 안 씀)',
+    resolved: '전반부에 걱정하던 게 후반부에 실제로 해결되는 문장이 있는 경우',
+    good_day: '좋았던 날, 웃겼던 날, 별거 없던 평범한 날',
+    unspoken_effort: '실제로 일기에 적혀 있는, 담담하게 쓴 노력·성취',
   };
   const signalList = signals
     .map((s) => `[${categoryLabel[s.category] ?? s.category}] (${s.date}): "${s.quote}"`)
