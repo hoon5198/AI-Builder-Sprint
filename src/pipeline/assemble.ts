@@ -4,13 +4,23 @@ import { LetterParagraph, LetterSegment } from '../types';
 
 const UPSTAGE_API_KEY = process.env.EXPO_PUBLIC_UPSTAGE_API_KEY;
 
+const CLOSING_LINE = '다음 달의 너는 이걸 잊고 있을 텐데, 그래도 한 번은 읽어줬으면 좋겠다.';
+
 const SYSTEM_PROMPT = `당신은 지난달의 "나"가 되어 다음 달의 나에게 편지를 씁니다.
 이 편지는 AI가 분석해서 알려주는 리포트가 아니라, 그 사람이 직접 쓴 편지처럼 읽혀야 합니다.
 
+# 절대 지켜야 할 핵심 규칙 3 — 인용 앞에서 내용을 미리 설명하지 마세요
+{{Q:ID}} 바로 앞 문장에서 그 인용이 무슨 내용인지 미리 요약하거나 재진술하지 마세요.
+잘못된 예: "엄마가 옥수수 삶아준 저녁이 있었어. 그게 여름이지…… {{Q:07-01a}}" (앞 문장이 인용 내용을 미리 말해버림)
+올바른 예: "{{Q:07-01a}}는 말이 아직도 생각나." 또는 "엄마가 저녁에 해준 게 있었지, {{Q:07-01a}}"
+인용 앞에는 그 인용과 겹치지 않는 다른 맥락(장소, 감정, 다른 사건과의 연결)만 짧게 두세요.
+인용 뒤에서 감상을 붙이는 건 괜찮습니다.
+
 # 형식
 - 반말. 존댓말 절대 금지
-- 인사로 시작 → 회상 → 다음 달의 나에게 한마디로 끝
+- 인사로 시작 → 회상으로 이어지는 글
 - 문단은 3~6개, 자연스럽게 이어지는 글
+- 마무리 인사는 당신이 쓰지 않아도 됩니다. 편지 본문(인용을 담은 문단들)만 작성하세요.
 
 # 절대 쓰면 안 되는 표현
 - 평가·칭찬: 대단하다, 훌륭하다, 잘했다, 자랑스럽다
@@ -18,29 +28,38 @@ const SYSTEM_PROMPT = `당신은 지난달의 "나"가 되어 다음 달의 나�
 - 집계 어투: N번 썼다, N일 중 N일, 빈도가 높다
 - 진단·분석 어투: ~로 보인다, ~한 경향이 있다, 패턴이 나타난다
 - 자기비판: 왜 이것밖에, 또, 여전히, 항상(부정 맥락)
-- 마지막 문단 외에는 "~좋겠다", "~바란다" 계열 문장을 쓰지 마세요. 이런 문장은 편지 전체에서 마지막 한 번만 허용됩니다
+- "~좋겠다", "~바란다" 계열 문장은 아예 쓰지 마세요
+
+# 절대 지켜야 할 핵심 규칙 1 — 날짜 순서 나열 금지
+가장 흔하고 가장 나쁜 실패는 "1일엔 이랬고, 6일엔 이랬고, 11일엔 이랬고..."처럼
+날짜 순서대로 하나씩 요약해서 나열하는 것입니다. 이건 일기 요약이지 편지가 아닙니다.
+
+대신 이렇게 쓰세요:
+- 문단을 "그날 무슨 일이 있었는지"가 아니라 "그 인용이 어떤 감정/주제를 담고 있는지"로 묶으세요
+- 날짜나 "몇 일에"를 문장에 직접 언급하지 마세요 (예: "13일에", "27일에" 같은 표현 쓰지 말 것)
+- 인용 하나당 문단 하나씩 기계적으로 배정하지 말고, 감정이나 흐름이 통하는 인용끼리는 한 문단에 자연스럽게 엮으세요
+
+# 절대 지켜야 할 핵심 규칙 2 — 문장 다양성
+1. "~라고 적어놨더라"를 반복해서 쓰지 마세요. 인용을 연결하는 표현을 문단마다 다르게 쓰세요.
+   예: "~라고 자주 썼는데", "~는 말은 참 여러 번 썼더라", "~로 끝냈더라", "~을 보니", "~라던데", 아예 연결어 없이 인용을 문장 맨 앞이나 중간에 바로 놓기.
+   같은 연결 표현을 편지 안에서 두 번 이상 반복하지 마세요.
+2. "그때는 ~였는데, 지금은 ~"라는 대구 구조는 편지 전체에서 최대 1번만 쓰세요.
+3. 앞 문장에서 이미 쓴 단어를 그 문장 바로 뒤의 인용과 겹치게 쓰지 마세요.
+4. 감상은 과하지 않게. "정말 다행이었어" 대신 "다행이네" 정도의 담백한 톤을 유지하세요.
 
 # resolved 카테고리 특별 규칙
 - resolved 카테고리 신호는 quote(해결된 순간의 문장)와 context(처음 걱정하던 문장)를 함께 받습니다
-- 반드시 두 문장을 대비시켜서 쓰세요: 먼저 처음에 걱정했다는 사실을 당신의 말로 요약해서 언급하고, 그 다음 quote로 해결을 보여주세요
-- context에 있는 문장을 그대로 인용하지 마세요. "~한 일로 며칠을 걱정했는데" 처럼 당신의 말로 요약만 하세요. 원문 그대로 옮기면 안 됩니다
-- "해결됐다", "다행이다" 같은 감상은 담담하게, 절대 "잘됐다", "다행이야 정말" 같은 과한 감탄으로 쓰지 마세요
+- 두 문장을 대비시키되, context 문장을 그대로 인용하지 마세요. 당신의 말로 요약만 하세요
+- context에는 별도의 {{Q:ID}} 표시를 쓰지 마세요 — context는 quote 하나에 딸린 참고 정보일 뿐입니다
 
 # 인용 규칙 (매우 중요, 반드시 지킬 것)
 아래 신호 목록의 각 항목에는 고유 ID가 붙어 있습니다 (예: ID:07-06a). 그 신호를 인용할 자리에는
 반드시 그 ID를 그대로 써서 **{{Q:ID}}** 형태로 표시하세요.
-예: 신호의 ID가 07-06a라면, 그 자리엔 정확히 {{Q:07-06a}} 라고만 쓰세요.
 
-- 절대로 quote 문장을 직접 타이핑하지 마세요. {{Q:ID}} 표시 하나로 대신합니다
+- 절대로 quote 문장을 직접 타이핑하지 마세요. {{Q:ID}} 표시 하나로 대신합니다. 원문을 쓰고 그 뒤에 {{Q:ID}}를 또 붙이는 것도 금지입니다 — 표시 하나만 있으면 됩니다
 - {{Q:ID}} 앞뒤에 그 인용의 원문 단어를 다시 쓰지 마세요
-- "적지 않았다", "말하지 않았다", "기록에 남지 않았다" 같이 인용의 존재를 부정하는 서술 금지 — 전부 실제로 그 사람이 쓴 문장입니다
-- ID는 신호 목록에 적힌 그대로 정확히 복사해서 쓰세요. 같은 날짜라도 ID가 다르면(예: 07-06a와 07-06b) 완전히 다른 신호이니 절대 헷갈리지 마세요 — 반드시 그 신호의 내용과 어울리는 문장에 맞는 ID를 쓰세요
-- 출력하기 직전에 신호 목록의 ID를 하나씩 확인하며, 각 ID가 편지 안에 정확히 한 번씩 있는지, 그리고 그 ID가 등장하는 문단의 내용이 그 신호의 quote 내용과 실제로 어울리는지 스스로 검토하세요
-
-# 인용 연결 방식
-- 한 문장에 인용을 2개 이상 억지로 이어붙이지 마세요
-- {{Q:ID}} 뒤에 조사·어미를 붙일 땐 자연스럽게 이어지는지 확인하고, 안 이어지면 "~라고 적어놨더라" 처럼 연결 표현을 쓰세요
-- "말 안 한 노력" 카테고리 인용은 다른 인용과 한 문장에 섞지 말고 독립된 문단으로 다루세요
+- "적지 않았다", "말하지 않았다" 같이 인용의 존재를 부정하는 서술 금지
+- ID는 신호 목록에 적힌 그대로 정확히 복사해서 쓰세요. 신호 목록에 있는 ID 개수만큼만 쓰세요. 목록에 없는 ID를 만들어내지 마세요
 
 # 출력 형식
 반드시 JSON만 출력하세요. 다른 텍스트, 설명, 코드블록 표시 없이 순수 JSON만.
@@ -78,7 +97,7 @@ function buildUserPrompt(signalsWithId: SignalWithId[], monthLabel: string): str
       return `ID:${id} [${categoryLabel[signal.category] ?? signal.category}] (${signal.date}): "${signal.quote}"${contextNote}`;
     })
     .join('\n');
-  return `${monthLabel}의 신호 목록:\n${signalList}\n\n이 신호들로 편지를 조립해줘. 인용 자리엔 반드시 {{Q:ID}} 형태로, 위에 적힌 ID 그대로 써줘. 반드시 JSON으로만 답해줘.`;
+  return `${monthLabel}의 신호 목록:\n${signalList}\n\n이 신호들로 편지 본문을 조립해줘 (마무리 인사는 안 써도 돼, 본문만). 날짜 순서대로 나열하지 말고, 감정이나 주제로 자연스럽게 엮어줘. 인용 자리엔 반드시 {{Q:ID}} 형태로, 위에 적힌 ID 그대로 써줘. 반드시 JSON으로만 답해줘.`;
 }
 
 function stripDuplicatedQuoteText(segments: LetterSegment[]): LetterSegment[] {
@@ -131,6 +150,11 @@ function parseParagraph(text: string, signalsWithId: SignalWithId[]): LetterSegm
   return segments;
 }
 
+function countDateMentions(text: string): number {
+  const matches = text.match(/\d{1,2}일/g);
+  return matches ? matches.length : 0;
+}
+
 export async function assembleLetter(
   signals: ExtractedSignal[],
   monthLabel: string,
@@ -151,7 +175,7 @@ export async function assembleLetter(
     },
     body: JSON.stringify({
       model: 'solar-pro3',
-      temperature: 0.3,
+      temperature: 0.5,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: buildUserPrompt(signalsWithId, monthLabel) },
@@ -166,7 +190,20 @@ export async function assembleLetter(
   const data = await response.json();
   const rawText = data.choices?.[0]?.message?.content ?? '';
   const cleaned = rawText.replace(/```json|```/g, '').trim();
-  const parsed: { paragraphs: string[] } = JSON.parse(cleaned);
+
+  let parsed: { paragraphs: string[] };
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    console.log(`--- 시도 ${attempt} 원본 응답 (JSON 파싱 실패) ---`);
+    console.log(rawText);
+    console.log('---');
+    if (attempt >= 8) {
+      throw new Error('JSON 파싱이 8번 시도 후에도 계속 실패했습니다.');
+    }
+    console.warn(`JSON 파싱 실패 — 재시도 ${attempt + 1}번째`);
+    return assembleLetter(signals, monthLabel, attempt + 1);
+  }
 
   console.log(`--- 시도 ${attempt} 원본 응답 ---`);
   console.log(rawText);
@@ -179,7 +216,7 @@ export async function assembleLetter(
     segments: stripDuplicatedQuoteText(parseParagraph(text, signalsWithId)),
   }));
 
-  // 검증 1: 모든 신호(quote)가 정확히 한 번씩 편지에 등장하는가 (고유 ID 매칭이라 순서 혼동 문제 자체가 사라짐)
+  // 검증 1: 모든 신호(quote)가 정확히 한 번씩 편지에 등장하는가
   const usedQuotes = paragraphs.flatMap((p) =>
     p.segments.filter((s) => s.type === 'quote').map((s) => s.content)
   );
@@ -205,31 +242,54 @@ export async function assembleLetter(
     (text, i) => text.length > 5 && paragraphTexts.indexOf(text) !== i
   );
 
-  // 검증 4: 마지막 문단 외에 조언성 표현이 있는가
+  // 검증 4: 조언성 표현이 있는가
   const bannedPhrases = ['하면 좋겠다', '좋았으면', '잊지 않았으면', '기억해 두면', '해보자'];
   const paragraphFullTexts = paragraphs.map((p) => p.segments.map((s) => s.content).join(''));
-  const hasBannedPhraseOutsideLastParagraph = paragraphFullTexts
-    .slice(0, -1)
-    .some((text) => bannedPhrases.some((phrase) => text.includes(phrase)));
+  const hasBannedPhrase = paragraphFullTexts.some((text) =>
+    bannedPhrases.some((phrase) => text.includes(phrase))
+  );
+
+  // 검증 5: "적어놨더라"가 반복해서 나오는가
+  const jeokeonatdaCount = paragraphFullTexts.filter((text) => text.includes('적어놨더라')).length;
+  const tooRepetitiveConnector = jeokeonatdaCount >= 3;
+
+  // 검증 6: "그때는" + "지금은" 대구 구조가 2번 이상 나오는가
+  const thenNowCount = paragraphFullTexts.filter(
+    (text) => text.includes('그때는') && text.includes('지금은')
+  ).length;
+  const tooRepetitiveThenNow = thenNowCount >= 2;
+
+  // 검증 7: "N일" 형태로 날짜를 직접 언급하는 문장이 너무 많은가
+  const totalDateMentions = paragraphFullTexts.reduce((sum, text) => sum + countDateMentions(text), 0);
+  const tooManyDateMentions = totalDateMentions >= 3;
 
   const isValid =
     missingQuotes.length === 0 &&
     !extraQuoteCount &&
     !hasDuplicatedQuoteText &&
     !hasDuplicatedParagraphText &&
-    !hasBannedPhraseOutsideLastParagraph;
+    !hasBannedPhrase &&
+    !tooRepetitiveConnector &&
+    !tooRepetitiveThenNow &&
+    !tooManyDateMentions;
 
   if (!isValid) {
     if (attempt >= 8) {
       throw new Error(
-        `조립 검증 실패 (누락된 인용: ${missingQuotes.join(' / ') || '없음'}, 개수불일치: ${extraQuoteCount}, 중복텍스트: ${hasDuplicatedQuoteText}, 문단중복: ${hasDuplicatedParagraphText}, 금지표현: ${hasBannedPhraseOutsideLastParagraph}). 8번 시도 후 실패.`
+        `조립 검증 실패 (누락: ${missingQuotes.join(' / ') || '없음'}, 개수불일치: ${extraQuoteCount}, 중복텍스트: ${hasDuplicatedQuoteText}, 문단중복: ${hasDuplicatedParagraphText}, 금지표현: ${hasBannedPhrase}, 연결어반복: ${tooRepetitiveConnector}, 대구반복: ${tooRepetitiveThenNow}, 날짜나열: ${tooManyDateMentions}). 8번 시도 후 실패.`
       );
     }
     console.warn(
-      `검증 실패 감지 (누락된 인용: ${missingQuotes.length}개, 개수불일치: ${extraQuoteCount}, 중복텍스트: ${hasDuplicatedQuoteText}, 문단중복: ${hasDuplicatedParagraphText}, 금지표현: ${hasBannedPhraseOutsideLastParagraph}) — 재시도 ${attempt + 1}번째`
+      `검증 실패 감지 (누락: ${missingQuotes.length}, 개수불일치: ${extraQuoteCount}, 중복텍스트: ${hasDuplicatedQuoteText}, 문단중복: ${hasDuplicatedParagraphText}, 금지표현: ${hasBannedPhrase}, 연결어반복: ${tooRepetitiveConnector}, 대구반복: ${tooRepetitiveThenNow}, 날짜나열: ${tooManyDateMentions}) — 재시도 ${attempt + 1}번째`
     );
     return assembleLetter(signals, monthLabel, attempt + 1);
   }
 
-  return { paragraphs, signature };
+  // 마무리 문단은 모델에게 맡기지 않고 코드에서 고정으로 붙임 — 안정성 확보
+  const paragraphsWithClosing: LetterParagraph[] = [
+    ...paragraphs,
+    { segments: [{ type: 'text', content: CLOSING_LINE }] },
+  ];
+
+  return { paragraphs: paragraphsWithClosing, signature };
 }
