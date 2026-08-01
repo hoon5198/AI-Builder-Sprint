@@ -303,3 +303,19 @@ interface ExtractedSignal {
 - `handleQuoteTap`(편지에서 문장 탭)은 손대지 않음 — `diaryDate`만 바꾸면 위 `useEffect`가 알아서 storage 우선으로 다시 조회하므로 자동으로 같은 혜택을 받음
 - `npx tsc --noEmit` 통과 (frontend/ 미사용 스캐폴드 에러 제외 시 에러 없음)
 - 실기기 확인은 아직 못 함 — 다음에 폰으로 ① 오늘 홈에서 일기 저장 → 캘린더 갔다가 그 날짜 다시 탭 → 일기 상세로 바로 가는지 ② 안 쓴 날은 여전히 '일기 쓰기'로 가는지 확인 필요
+
+## 2026-08-01 — hyelim 브랜치 병합 + 캘린더 버그 수정
+
+### hyelim 브랜치 병합
+- 날짜 하드코딩 해결 (todayDateString() 실제 계산), storage.ts 함수명 통일 (getEntry→getDiaryEntry 등)
+- 편지 인용 하이라이트 버그 수정 (LetterScreen→App.tsx→DiaryDetailScreen에 quote 전달)
+- react-native-svg 아이콘, 봉투 삼각 플랩 적용
+- 캘린더 storage.ts 실데이터 연동
+- 4개 파일 충돌(App.tsx, HomeScreen.tsx, LetterScreen.tsx, progress.md) 수동 병합 완료
+
+### 캘린더 렌더링 버그 발견 및 수정
+- 요일 헤더와 날짜 칸이 flexWrap 반올림 오차로 6개씩만 한 줄에 들어가고 나머지가 밀리는 버그 발견
+- flexWrap 방식 대신, 7일씩 명시적으로 week 배열을 나눠서 렌더링하는 방식으로 변경
+
+### 결정 사항
+- 캘린더는 실제 오늘(8월) 기준 동적 전환 대신, 발표 데이터(7월)에 맞춰 2026-07 고정 유지하기로 함. 8월에 저장한 데이터는 storage.ts엔 정상 저장되지만 캘린더에서 확인은 불가 — 발표 시연엔 지장 없음
