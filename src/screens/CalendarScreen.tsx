@@ -4,6 +4,7 @@ import { useTheme } from '../ThemeContext';
 import { entries as mockEntries } from '../data/mockData';
 import { realEntriesJuly } from '../data/realEntries';
 import { getEntriesForMonth } from '../storage';
+import { julyDiary } from '../data/julyDiary';
 
 interface Props {
   onBack: () => void;
@@ -23,6 +24,7 @@ function dayOf(dateKey: string): number {
 const demoWrittenDays = new Set([
   ...Object.keys(mockEntries).map(dayOf),
   ...Object.keys(realEntriesJuly).map(dayOf),
+  ...Object.keys(julyDiary).map(dayOf),
 ]);
 
 export default function CalendarScreen({ onBack, onSelectDay }: Props) {

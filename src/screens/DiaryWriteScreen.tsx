@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { getDiaryEntry, saveDiaryEntry } from '../storage';
 import { formatDateLabel } from '../dateUtils';
+import DismissKeyboardView from '../components/DismissKeyboardView';
 
 interface Props {
   date: string; // 'YYYY-MM-DD'
@@ -32,7 +33,7 @@ export default function DiaryWriteScreen({ date, onBack, onSaved }: Props) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <DismissKeyboardView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Pressable onPress={onBack} style={styles.backRow}>
         <Text style={{ color: colors.sub, fontSize: 13 }}>‹ 캘린더로 돌아가기</Text>
       </Pressable>
@@ -52,7 +53,7 @@ export default function DiaryWriteScreen({ date, onBack, onSaved }: Props) {
           <Text style={{ color: colors.bg, fontSize: 14 }}>저장</Text>
         </Pressable>
       </View>
-    </View>
+    </DismissKeyboardView>
   );
 }
 
