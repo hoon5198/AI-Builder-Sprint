@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, GowunBatang_400Regular } from '@expo-google-fonts/gowun-batang';
-
+import PinScreen from './src/screens/PinScreen';
 import { ThemeProvider, useTheme } from './src/ThemeContext';
 import LockScreen from './src/screens/LockScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -26,7 +26,7 @@ function todayDateString(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-type Screen = 'lock' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox' | 'ocr';
+type Screen = 'lock' | 'pin' | 'home' | 'cal' | 'envelope' | 'letter' | 'diary' | 'write' | 'letterbox' | 'ocr';
 
 function AppInner() {
   const { colors } = useTheme();
@@ -96,8 +96,14 @@ function AppInner() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style="auto" />
       {screen === 'lock' && (
-        <LockScreen onUnlock={handleUnlock} demoMode={demoMode} onToggleDemoMode={() => setDemoMode((v) => !v)} />
+        <LockScreen
+          onUnlock={handleUnlock}
+          onNeedPin={() => setScreen('pin')}
+          demoMode={demoMode}
+          onToggleDemoMode={() => setDemoMode((v) => !v)}
+        />
       )}
+      {screen === 'pin' && <PinScreen onSuccess={handleUnlock} />}
       {screen === 'home' && (
         <HomeScreen
           date={todayDate}

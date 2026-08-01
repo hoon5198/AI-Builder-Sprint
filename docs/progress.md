@@ -319,3 +319,11 @@ interface ExtractedSignal {
 
 ### 결정 사항
 - 캘린더는 실제 오늘(8월) 기준 동적 전환 대신, 발표 데이터(7월)에 맞춰 2026-07 고정 유지하기로 함. 8월에 저장한 데이터는 storage.ts엔 정상 저장되지만 캘린더에서 확인은 불가 — 발표 시연엔 지장 없음
+
+## 2026-08-01 (추가) — 지문/PIN 인증 구현
+
+- expo-local-authentication 설치, LockScreen에서 실제 지문/Face ID 인증 호출
+- 기기에 지문 미등록·미지원 또는 인증 실패/취소 시 자동으로 PIN 화면으로 전환
+- PinScreen.tsx 신규: 최초 1회 4자리 PIN 설정(설정→확인 2단계) → 이후엔 검증만
+- storage.ts에 getPin/setPin 추가 (AsyncStorage, 평문 저장 — 데모 앱 수준이라 보안 강화는 안 함)
+- 실기기 확인 완료: 지문 인증, PIN 설정, PIN 재입력 모두 정상 동작

@@ -38,3 +38,13 @@ export async function getEntriesForMonth(yearMonth: string): Promise<DiaryEntry[
     .filter((entry) => entry.date.startsWith(yearMonth))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+const PIN_KEY = 'chohyaru:pin';
+
+export async function getPin(): Promise<string | null> {
+  return AsyncStorage.getItem(PIN_KEY);
+}
+
+export async function setPin(pin: string): Promise<void> {
+  await AsyncStorage.setItem(PIN_KEY, pin);
+}
